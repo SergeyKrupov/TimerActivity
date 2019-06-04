@@ -10,6 +10,7 @@ import com.example.timeractivity.lapsadapter.LapItem
 import com.example.timeractivity.lapsadapter.LapsAdapter
 import com.example.timeractivity.uimodels.RunningTimer
 import com.example.timeractivity.uimodels.TimerState
+import com.example.timeractivity.utils.DurationFormatter
 import dagger.android.AndroidInjection
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
@@ -50,12 +51,12 @@ class TimerActivity : MvpAppCompatActivity(), TimerView {
 
     override fun onStop() {
         super.onStop()
-        timerTickHandler.removeCallbacks(timerRunnable)
+        contentView.removeCallbacks(timerRunnable)
     }
 
     override fun onRestart() {
         super.onRestart()
-        timerTickHandler.postDelayed(timerRunnable, 0)
+        contentView.postDelayed(timerRunnable, 0)
     }
 
     // TimerView
@@ -68,13 +69,14 @@ class TimerActivity : MvpAppCompatActivity(), TimerView {
     }
 
     override fun setTimerState(timerState: TimerState) {
-        timerTickHandler.removeCallbacks(timerRunnable)
+        contentView.removeCallbacks(timerRunnable)
+        timerRunnable.timerState = null
 
-        timeTextView.text = formatDuration(timerState.duration)
+        timeTextView.text = DurationFormatter.stringFromDuration(timerState.duration)
 
         if (timerState is RunningTimer) {
             timerRunnable.timerState = timerState
-            timerTickHandler.postDelayed(timerRunnable, 0)
+            contentView.postDelayed(timerRunnable, 0)
         }
     }
 
@@ -83,20 +85,15 @@ class TimerActivity : MvpAppCompatActivity(), TimerView {
     }
 
     // Timer
-    private val timerTickHandler = Handler()
-
     private val timerRunnable = object: Runnable {
 
         var timerState: RunningTimer? = null
 
         override fun run() {
             val state = timerState ?: return
-            timeTextView.text = formatDuration(state.duration + System.currentTimeMillis() - state.startAt)
-            timerTickHandler.postDelayed(this, 100)
+            timeTextView.text = DurationFormatter.stringFromDuration(state.duration + System.currentTimeMillis() - state.startAt)
+            contentView.postDelayed(this, 100)
         }
     }
 
-    private fun formatDuration(duration: Long): String {
-        return (duration / 1000.0).toString()
-    }
 }

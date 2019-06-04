@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.timeractivity.R
+import com.example.timeractivity.utils.DurationFormatter
 import kotlinx.android.synthetic.main.lap_cell.view.*
 
 sealed class LapViewHolder(
@@ -13,7 +14,6 @@ sealed class LapViewHolder(
     LayoutInflater.from(parent.context).inflate(R.layout.lap_cell, parent, false)
 ) {
     fun formatLapName(position: Int) = String.format("Lap %s", position)
-    fun formatDuration(duration: Long) = String.format("%.2f", duration / 1000.0)
 
     open fun onAttachToWindow() {}
 
@@ -26,29 +26,27 @@ class CurrentLapViewHolder(
 
     fun setup(item: CurrentLap, position: Int) {
         itemView.lapNameTextView.text = formatLapName(position)
-        itemView.lapValueTextView.text = formatDuration(item.duration)
+        itemView.lapValueTextView.text = DurationFormatter.stringFromDuration(item.duration)
         timerRunnable.lap = item
     }
 
     override fun onAttachToWindow() {
-        timerTickHandler.postDelayed(timerRunnable, 0)
+        itemView.postDelayed(timerRunnable, 0)
     }
 
     override fun onDetachFromWindow() {
-        timerTickHandler.removeCallbacks(timerRunnable)
+        itemView.removeCallbacks(timerRunnable)
     }
 
     // Private
-    private val timerTickHandler = Handler()
-
     private val timerRunnable = object: Runnable {
 
         var lap: CurrentLap? = null
 
         override fun run() {
             val lap = this.lap ?: return
-            itemView.lapValueTextView.text = formatDuration(lap.duration + System.currentTimeMillis() - lap.startAt)
-            timerTickHandler.postDelayed(this, 100)
+            itemView.lapValueTextView.text = DurationFormatter.stringFromDuration(lap.duration + System.currentTimeMillis() - lap.startAt)
+            itemView.postDelayed(this, 100)
         }
     }
 }
@@ -59,6 +57,6 @@ class FinishedLapViewHolder(
 
     fun setup(item: FinishedLap, position: Int) {
         itemView.lapNameTextView.text = formatLapName(position)
-        itemView.lapValueTextView.text = formatDuration(item.duration)
+        itemView.lapValueTextView.text = DurationFormatter.stringFromDuration(item.duration)
     }
 }
